@@ -156,10 +156,18 @@
 <body>
 <div class="wrap">
   <header>
-    <p class="eyebrow">Суды общей юрисдикции · ВС РФ</p>
+    <p class="eyebrow" id="eyebrow">Суды общей юрисдикции · ВС РФ</p>
     <h1>Калькулятор государственной пошлины</h1>
-    <p class="sub">По ст. 333.19, 333.20, 333.36 НК РФ в редакции 259-ФЗ. Для заявлений и жалоб, поданных после 08.09.2024.</p>
+    <p class="sub" id="lawSub">По ст. 333.19, 333.20, 333.36 НК РФ в редакции 259-ФЗ. Для заявлений и жалоб, поданных после 08.09.2024.</p>
   </header>
+
+  <section class="card" aria-labelledby="h-court">
+    <h2 id="h-court">Куда подаёте</h2>
+    <div class="seg" role="group" aria-label="Вид суда">
+      <button type="button" id="court-soyu" aria-pressed="true">Суд общей юрисдикции</button>
+      <button type="button" id="court-arb" aria-pressed="false">Арбитражный суд</button>
+    </div>
+  </section>
 
   <section class="card" aria-labelledby="h-payer">
     <h2 id="h-payer">Кто подаёт заявление</h2>
@@ -167,7 +175,7 @@
       <button type="button" id="payer-person" aria-pressed="true">Физическое лицо</button>
       <button type="button" id="payer-org" aria-pressed="false">Организация</button>
     </div>
-    <p class="seg-note">Индивидуальный предприниматель в суде общей юрисдикции платит как физическое лицо.</p>
+    <p class="seg-note">Индивидуальный предприниматель платит по ставкам для физических лиц.</p>
   </section>
 
   <section class="card" aria-labelledby="h-claims">
@@ -193,7 +201,7 @@
   <section aria-live="polite" id="result" style="display:grid;gap:14px"></section>
 
   <footer>
-    <p style="margin:0">Расчёт справочный. Размеры пошлины сверены с текстом НК РФ в редакции от 15.12.2025 (с изм. от 15.01.2026). Перед оплатой проверьте, не менялся ли закон, и уточните реквизиты на сайте суда.</p>
+    <p style="margin:0">Расчёт справочный. Суды общей юрисдикции — ст. 333.19, 333.20, 333.36 НК РФ; арбитражные суды — ст. 333.21, 333.22, 333.37 НК РФ; возврат — ст. 333.40 НК РФ. Размеры пошлины сверены с текстом НК РФ в редакции от 15.12.2025 (с изм. от 15.01.2026). Перед оплатой проверьте, не менялся ли закон, и уточните реквизиты на сайте суда.</p>
   </footer>
 </div>
 
@@ -212,7 +220,13 @@
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const rub = (n) => D.fmt(n) + ' ₽';
 
+  const LAW = {
+    soyu: { eyebrow: 'Суды общей юрисдикции · ВС РФ', sub: 'По ст. 333.19, 333.20, 333.36 НК РФ в редакции 259-ФЗ. Для заявлений и жалоб, поданных после 08.09.2024.' },
+    arb: { eyebrow: 'Арбитражные суды · ВС РФ', sub: 'По ст. 333.21, 333.22, 333.37 НК РФ в редакции 259-ФЗ. Для заявлений и жалоб, поданных после 08.09.2024.' },
+  };
+  const court = () => D.COURTS[state.court];
   const state = {
+    court: 'soyu',
     payer: 'person',
     claims: [{ key: 1, type: 'property', amount: '500 000', options: {} }, { key: 2, type: 'nonprop', amount: '', options: {} }],
     benefit: 'none',
@@ -234,7 +248,7 @@
   // Селектор добавления требований, сгруппированный по разделам
   function fillAdd() {
     const groups = {};
-    D.TYPES.forEach((t) => { (groups[t.group] = groups[t.group] || []).push(t); });
+    court().types.forEach((t) => { (groups[t.group] = groups[t.group] || []).push(t); });
     let html = '<option value="">+ Добавить требование или заявление</option>';
     for (const g in groups) {
       html += `<optgroup label="${esc(g)}">` + groups[g].map((t) => `<option value="${t.id}">${esc(t.label)}</option>`).join('') + '</optgroup>';
@@ -260,7 +274,7 @@
       return;
     }
     box.innerHTML = state.claims.map((c) => {
-      const t = D.TYPES.find((x) => x.id === c.type);
+      const t = court().types.find((x) => x.id === c.type);
       const amount = t.needsAmount ? `<label class="field">${esc(t.needsAmount)}
           <input type="text" inputmode="decimal" id="amt-${c.key}" data-key="${c.key}" data-role="amount" value="${esc(c.amount)}" placeholder="0"></label>` : '';
       const opt = t.option ? `<label class="check"><input type="checkbox" id="opt-${c.key}" data-key="${c.key}" data-role="option" ${c.options[t.option.id] ? 'checked' : ''}><span>${esc(t.option.label)}</span></label>` : '';
@@ -289,7 +303,7 @@
   $('claims').addEventListener('change', (e) => {
     if (e.target.dataset.role !== 'option') return;
     const c = state.claims.find((x) => x.key === Number(e.target.dataset.key));
-    const t = D.TYPES.find((x) => x.id === c.type);
+    const t = court().types.find((x) => x.id === c.type);
     c.options[t.option.id] = e.target.checked;
     haptic();
     update();
@@ -313,7 +327,26 @@
   $('payer-person').addEventListener('click', () => setPayer('person'));
   $('payer-org').addEventListener('click', () => setPayer('org'));
 
-  $('benefit').innerHTML = D.BENEFITS.map((b) => `<option value="${b.id}">${esc(b.label)}</option>`).join('');
+  function fillBenefits() {
+    $('benefit').innerHTML = court().benefits.map((b) => `<option value="${b.id}">${esc(b.label)}</option>`).join('');
+    state.benefit = 'none';
+  }
+  function setCourt(cid) {
+    if (state.court === cid) return;
+    state.court = cid;
+    $('court-soyu').setAttribute('aria-pressed', String(cid === 'soyu'));
+    $('court-arb').setAttribute('aria-pressed', String(cid === 'arb'));
+    $('eyebrow').textContent = LAW[cid].eyebrow;
+    $('lawSub').textContent = LAW[cid].sub;
+    // Оставляем требования, которые есть в обоих видах судов
+    state.claims = state.claims.filter((c) => court().types.some((t) => t.id === c.type));
+    if (!state.claims.length) state.claims = [{ key: nextKey++, type: 'property', amount: '500 000', options: {} }];
+    haptic();
+    fillAdd(); fillBenefits(); renderClaims(); update();
+  }
+  $('court-soyu').addEventListener('click', () => setCourt('soyu'));
+  $('court-arb').addEventListener('click', () => setCourt('arb'));
+  fillBenefits();
   $('benefit').addEventListener('change', (e) => { state.benefit = e.target.value; update(); });
   $('alreadyPaid').addEventListener('input', (e) => {
     e.target.value = formatInput(e.target.value);
@@ -325,6 +358,7 @@
 
   function update() {
     const res = D.calculate({
+      court: state.court,
       payer: state.payer,
       claims: state.claims.map((c) => ({ type: c.type, amount: parseAmount(c.amount), options: c.options })),
       benefit: state.benefit,
@@ -350,7 +384,7 @@
 
     const pc = res.payer === 'person' ? ' col-active' : '';
     const oc = res.payer === 'org' ? ' col-active' : '';
-    const firstRow = `<tr class="first"><td>Первая инстанция<span class="ref">районный суд, мировой судья, областной суд</span></td>
+    const firstRow = `<tr class="first"><td>Первая инстанция<span class="ref">${esc(res.firstInstance)}</span></td>
       <td class="num${pc}">${res.payer === 'person' ? rub(res.first) : '—'}</td><td class="num${oc}">${res.payer === 'org' ? rub(res.first) : '—'}</td></tr>`;
     const appealRows = res.appeals.map((a) => a.na
       ? `<tr><td>${esc(a.label)}<span class="na">${esc(a.na)}</span></td><td class="num${pc}">—</td><td class="num${oc}">—</td></tr>`
@@ -371,14 +405,14 @@
           <thead><tr><th>Инстанция</th><th class="num${pc}">Физлицо</th><th class="num${oc}">Организация</th></tr></thead>
           <tbody>${firstRow}${appealRows}</tbody>
         </table></div>
-        <p class="note">Пошлина за жалобу платится в твёрдой сумме и зависит только от того, кто её подаёт: физическое лицо или организация. Соучастники и третьи лица на стороне заявителя кассационной жалобы пошлину не платят (пп. 7 п. 1 ст. 333.20). Если заявитель освобождён от пошлины по ст. 333.36, по сложившейся практике льгота применяется и к его жалобам по этому делу.</p>
+        <p class="note">Пошлина за жалобу платится в твёрдой сумме и зависит только от того, кто её подаёт: физическое лицо или организация. ${esc(res.appealNote)} Если заявитель освобождён от пошлины по ${res.court === 'arb' ? 'ст. 333.37' : 'ст. 333.36'}, по сложившейся практике льгота применяется и к его жалобам по этому делу.</p>
       </section>
       ${refund}
       <div class="actions"><button class="btn" type="button" id="copy">Скопировать расчёт</button></div>`;
 
     // Текст для копирования
     const t = [];
-    t.push('Расчёт госпошлины (СОЮ, ст. 333.19 НК РФ)');
+    t.push(`Расчёт госпошлины: ${res.courtTitle.toLowerCase()} (${res.lawShort})`);
     t.push(`Заявитель: ${payerName}`);
     res.lines.forEach((l) => t.push(`• ${l.label}: ${l.type === 'alimony' ? 'истец освобождён' : D.fmt(l.payable) + ' ₽'} (${l.ref})`));
     t.push(`Первая инстанция: ${D.fmt(res.first)} ₽`);
