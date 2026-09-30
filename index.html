@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Госпошлина в суд</title>
+<!--TG--><script src="https://telegram.org/js/telegram-web-app.js"></script><!--/TG-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&family=PT+Serif:wght@700&family=PT+Mono&display=swap">
+<style>
+  /* Layout: single column form → result; instance table is the centerpiece; tokens follow Telegram theme when inside Telegram */
+  :root {
+    --bg: #f4f5f7;
+    --card: #ffffff;
+    --fg: #1b2330;
+    --muted: #5d6878;
+    --line: #dde2ea;
+    --accent: #1f4e8c;
+    --accent-soft: #e6eef8;
+    --accent-fg: #ffffff;
+    --seal: #8c2f2f;
+    --ok: #2d6a3e;
+    --ok-soft: #e4f1e7;
+    --warn-bg: #fbf1dd;
+    --warn-fg: #6e4a07;
+    --font-display: "PT Serif", Georgia, "Times New Roman", serif;
+    --font-body: "PT Sans", -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    --font-mono: "PT Mono", ui-monospace, Menlo, Consolas, monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]):not([data-tg]) {
+      --bg: #12161c; --card: #1a2029; --fg: #e4e8ee; --muted: #9aa5b4; --line: #2b3440;
+      --accent: #7fa8e0; --accent-soft: #1f2d42; --accent-fg: #0f1520; --seal: #e08d8d;
+      --ok: #7cc58f; --ok-soft: #1c2d22; --warn-bg: #2e2614; --warn-fg: #f0cf88;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"]:not([data-tg]) {
+    --bg: #12161c; --card: #1a2029; --fg: #e4e8ee; --muted: #9aa5b4; --line: #2b3440;
+    --accent: #7fa8e0; --accent-soft: #1f2d42; --accent-fg: #0f1520; --seal: #e08d8d;
+    --ok: #7cc58f; --ok-soft: #1c2d22; --warn-bg: #2e2614; --warn-fg: #f0cf88;
+    color-scheme: dark;
+  }
+  /* Внутри Telegram — цвета темы пользователя */
+  :root[data-tg] {
+    --bg: var(--tg-theme-secondary-bg-color, #f4f5f7);
+    --card: var(--tg-theme-bg-color, #ffffff);
+    --fg: var(--tg-theme-text-color, #1b2330);
+    --muted: var(--tg-theme-hint-color, #5d6878);
+    --accent: var(--tg-theme-button-color, #1f4e8c);
+    --accent-fg: var(--tg-theme-button-text-color, #ffffff);
+    --line: color-mix(in srgb, var(--fg) 12%, transparent);
+    --accent-soft: color-mix(in srgb, var(--accent) 13%, var(--card));
+    --ok-soft: color-mix(in srgb, #2d8a4e 14%, var(--card));
+    --ok: color-mix(in srgb, #2d8a4e 80%, var(--fg));
+    --warn-bg: color-mix(in srgb, #e0a020 16%, var(--card));
+    --warn-fg: var(--fg);
+    --seal: color-mix(in srgb, #c04040 75%, var(--fg));
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { background: var(--bg); color: var(--fg); font: 16px/1.5 var(--font-body); -webkit-text-size-adjust: 100%; }
+  .wrap { max-width: 680px; margin: 0 auto; padding-inline: 16px; padding-block: 18px 40px; display: grid; gap: 14px; }
+
+  header { display: grid; gap: 4px; padding-block: 6px 4px; }
+  .eyebrow { font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--seal); font-weight: 700; margin: 0; }
+  h1 { font-family: var(--font-display); font-size: clamp(24px, 6vw, 30px); line-height: 1.15; margin: 0; text-wrap: balance; }
+  .sub { color: var(--muted); font-size: 14.5px; margin: 0; }
+
+  .card { background: var(--card); border-radius: 14px; padding: 16px; display: grid; gap: 12px; }
+  .card > h2 { font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0; font-weight: 700; }
+
+  .seg { display: grid; grid-template-columns: 1fr 1fr; background: var(--bg); border-radius: 10px; padding: 3px; gap: 3px; }
+  .seg button { font: inherit; font-size: 15px; border: 0; border-radius: 8px; padding: 9px 8px; background: transparent; color: var(--fg); cursor: pointer; }
+  .seg button[aria-pressed="true"] { background: var(--card); color: var(--accent); font-weight: 700; box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+  .seg-note { font-size: 13px; color: var(--muted); margin: -4px 0 0; }
+
+  .claims { display: grid; gap: 10px; }
+  .claim { border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: grid; gap: 10px; }
+  .claim-head { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: start; }
+  .claim-title { font-weight: 700; font-size: 15px; line-height: 1.35; min-width: 0; }
+  .claim-ref { font-size: 12.5px; color: var(--muted); font-family: var(--font-mono); }
+  .claim-hint { font-size: 13px; color: var(--muted); margin: 0; }
+  .remove { border: 0; background: none; color: var(--muted); font-size: 20px; line-height: 1; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; }
+  .remove:hover { background: var(--bg); color: var(--seal); }
+
+  label.field { display: grid; gap: 4px; font-size: 13.5px; color: var(--muted); }
+  input[type="text"], select {
+    font: inherit; font-size: 16px; color: var(--fg); background: var(--bg); border: 1px solid transparent;
+    border-radius: 10px; padding: 10px 12px; width: 100%; min-width: 0;
+  }
+  input[type="text"] { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+  input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .check { display: grid; grid-template-columns: 20px 1fr; gap: 8px; font-size: 14px; align-items: start; cursor: pointer; }
+  .check input { width: 18px; height: 18px; margin: 2px 0 0; accent-color: var(--accent); }
+
+  .add { display: grid; gap: 6px; }
+  .add select { background: var(--accent-soft); color: var(--accent); font-weight: 700; border: 1px dashed color-mix(in srgb, var(--accent) 40%, transparent); }
+
+  details.more summary { cursor: pointer; font-size: 14.5px; color: var(--accent); list-style: none; }
+  details.more summary::-webkit-details-marker { display: none; }
+  details.more[open] summary { margin-bottom: 10px; }
+
+  /* Результат */
+  .total { background: var(--accent); color: var(--accent-fg); border-radius: 14px; padding: 16px; display: grid; gap: 2px; }
+  .total .k { font-size: 13.5px; opacity: .85; }
+  .total .v { font-family: var(--font-display); font-size: clamp(30px, 9vw, 40px); line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .total .s { font-size: 14px; opacity: .9; }
+
+  .lines { display: grid; gap: 0; }
+  .line { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .line:last-child { border-bottom: 0; }
+  .line .t { font-size: 14.5px; min-width: 0; }
+  .line .b { grid-column: 1 / -1; font-size: 13px; color: var(--muted); }
+  .line .a { font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; font-size: 15px; }
+  .line .a s { color: var(--muted); font-size: 13px; margin-right: 6px; }
+
+  .table-wrap { overflow-x: auto; margin: 0 -4px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+  th, td { text-align: left; padding: 10px 4px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12.5px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+  td.num, th.num { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  th.num { font-family: var(--font-body); }
+  td .ref { display: block; font-size: 12px; color: var(--muted); font-family: var(--font-mono); margin-top: 2px; }
+  td .na { font-size: 13px; color: var(--muted); }
+  .col-active { background: var(--accent-soft); }
+  tr.first td { font-weight: 700; }
+  tr:last-child td { border-bottom: 0; }
+
+  .note { font-size: 13.5px; color: var(--muted); margin: 0; }
+  .callout { background: var(--warn-bg); color: var(--warn-fg); border-radius: 10px; padding: 10px 12px; font-size: 14px; }
+  .callout.ok { background: var(--ok-soft); color: var(--fg); }
+
+  .refund { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .refund div { background: var(--bg); border-radius: 10px; padding: 10px; display: grid; gap: 2px; min-width: 0; }
+  .refund b { font-family: var(--font-mono); font-size: 15px; font-variant-numeric: tabular-nums; }
+  .refund span { font-size: 12.5px; color: var(--muted); }
+  .refund i { font-style: normal; font-size: 12.5px; color: var(--ok); font-weight: 700; }
+
+  .actions { display: grid; grid-template-columns: 1fr; gap: 8px; }
+  .btn { font: inherit; font-weight: 700; font-size: 15px; border: 0; border-radius: 10px; padding: 12px; cursor: pointer; background: var(--accent-soft); color: var(--accent); }
+
+  footer { font-size: 12.5px; color: var(--muted); display: grid; gap: 6px; padding-top: 4px; }
+
+  @media (max-width: 420px) {
+    .refund { grid-template-columns: 1fr; }
+    .refund div { grid-template-columns: 1fr auto; align-items: baseline; }
+    .refund i { grid-column: 1 / -1; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Суды общей юрисдикции · ВС РФ</p>
+    <h1>Калькулятор государственной пошлины</h1>
+    <p class="sub">По ст. 333.19, 333.20, 333.36 НК РФ в редакции 259-ФЗ. Для заявлений и жалоб, поданных после 08.09.2024.</p>
+  </header>
+
+  <section class="card" aria-labelledby="h-payer">
+    <h2 id="h-payer">Кто подаёт заявление</h2>
+    <div class="seg" role="group" aria-label="Заявитель">
+      <button type="button" id="payer-person" aria-pressed="true">Физическое лицо</button>
+      <button type="button" id="payer-org" aria-pressed="false">Организация</button>
+    </div>
+    <p class="seg-note">Индивидуальный предприниматель в суде общей юрисдикции платит как физическое лицо.</p>
+  </section>
+
+  <section class="card" aria-labelledby="h-claims">
+    <h2 id="h-claims">Требования</h2>
+    <div class="claims" id="claims"></div>
+    <div class="add">
+      <select id="addClaim" aria-label="Добавить требование"></select>
+    </div>
+    <p class="note">Несколько имущественных требований в одном иске складываются в общую цену иска. За каждое неимущественное требование пошлина платится отдельно.</p>
+  </section>
+
+  <section class="card" aria-labelledby="h-benefit">
+    <h2 id="h-benefit">Льготы</h2>
+    <select id="benefit" aria-label="Льгота"></select>
+    <details class="more" id="paidBox">
+      <summary>Истец увеличил или уменьшил требования</summary>
+      <label class="field">Уже уплачено ранее, ₽
+        <input type="text" inputmode="decimal" id="alreadyPaid" placeholder="0">
+      </label>
+    </details>
+  </section>
+
+  <section aria-live="polite" id="result" style="display:grid;gap:14px"></section>
+
+  <footer>
+    <p style="margin:0">Расчёт справочный. Размеры пошлины сверены с текстом НК РФ в редакции от 15.12.2025 (с изм. от 15.01.2026). Перед оплатой проверьте, не менялся ли закон, и уточните реквизиты на сайте суда.</p>
+  </footer>
+</div>
+
+<script src="calc.js"></script>
+<script>
+(function () {
+  const D = window.Duty;
+  const tg = window.Telegram && window.Telegram.WebApp;
+  if (tg && tg.initData) {
+    document.documentElement.setAttribute('data-tg', '');
+    tg.ready(); tg.expand();
+    try { tg.setHeaderColor('secondary_bg_color'); tg.setBackgroundColor('secondary_bg_color'); } catch (e) {}
+  }
+  const haptic = (t) => { try { tg && tg.HapticFeedback && tg.HapticFeedback.selectionChanged(); } catch (e) {} };
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const rub = (n) => D.fmt(n) + ' ₽';
+
+  const state = {
+    payer: 'person',
+    claims: [{ key: 1, type: 'property', amount: '500 000', options: {} }, { key: 2, type: 'nonprop', amount: '', options: {} }],
+    benefit: 'none',
+    alreadyPaid: '',
+  };
+  let nextKey = 3;
+
+  function parseAmount(s) {
+    const n = Number(String(s || '').replace(/\s| /g, '').replace(',', '.'));
+    return isFinite(n) && n > 0 ? n : 0;
+  }
+  function formatInput(s) {
+    const clean = String(s).replace(/[^\d.,]/g, '').replace('.', ',');
+    const [int, ...rest] = clean.split(',');
+    const dec = rest.length ? ',' + rest.join('').slice(0, 2) : '';
+    return int.replace(/^0+(?=\d)/, '').replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + dec;
+  }
+
+  // Селектор добавления требований, сгруппированный по разделам
+  function fillAdd() {
+    const groups = {};
+    D.TYPES.forEach((t) => { (groups[t.group] = groups[t.group] || []).push(t); });
+    let html = '<option value="">+ Добавить требование или заявление</option>';
+    for (const g in groups) {
+      html += `<optgroup label="${esc(g)}">` + groups[g].map((t) => `<option value="${t.id}">${esc(t.label)}</option>`).join('') + '</optgroup>';
+    }
+    $('addClaim').innerHTML = html;
+  }
+  $('addClaim').addEventListener('change', (e) => {
+    const type = e.target.value;
+    if (!type) return;
+    state.claims.push({ key: nextKey++, type, amount: '', options: {} });
+    e.target.value = '';
+    haptic();
+    renderClaims();
+    const last = document.querySelector('.claim:last-child input[type="text"]');
+    if (last) last.focus();
+    update();
+  });
+
+  function renderClaims() {
+    const box = $('claims');
+    if (!state.claims.length) {
+      box.innerHTML = '<p class="note">Добавьте хотя бы одно требование из списка ниже.</p>';
+      return;
+    }
+    box.innerHTML = state.claims.map((c) => {
+      const t = D.TYPES.find((x) => x.id === c.type);
+      const amount = t.needsAmount ? `<label class="field">${esc(t.needsAmount)}
+          <input type="text" inputmode="decimal" id="amt-${c.key}" data-key="${c.key}" data-role="amount" value="${esc(c.amount)}" placeholder="0"></label>` : '';
+      const opt = t.option ? `<label class="check"><input type="checkbox" id="opt-${c.key}" data-key="${c.key}" data-role="option" ${c.options[t.option.id] ? 'checked' : ''}><span>${esc(t.option.label)}</span></label>` : '';
+      const hint = t.hint ? `<p class="claim-hint">${esc(t.hint)}</p>` : '';
+      return `<div class="claim">
+        <div class="claim-head">
+          <div><div class="claim-title">${esc(t.label)}</div><div class="claim-ref">${esc(t.ref)} НК РФ</div></div>
+          <button type="button" class="remove" data-key="${c.key}" data-role="remove" aria-label="Удалить требование">×</button>
+        </div>${amount}${opt}${hint}</div>`;
+    }).join('');
+  }
+
+  $('claims').addEventListener('input', (e) => {
+    const key = Number(e.target.dataset.key);
+    const c = state.claims.find((x) => x.key === key);
+    if (!c) return;
+    if (e.target.dataset.role === 'amount') {
+      const pos = e.target.value.length - e.target.selectionStart;
+      e.target.value = formatInput(e.target.value);
+      const p = Math.max(0, e.target.value.length - pos);
+      try { e.target.setSelectionRange(p, p); } catch (err) {}
+      c.amount = e.target.value;
+    }
+    update();
+  });
+  $('claims').addEventListener('change', (e) => {
+    if (e.target.dataset.role !== 'option') return;
+    const c = state.claims.find((x) => x.key === Number(e.target.dataset.key));
+    const t = D.TYPES.find((x) => x.id === c.type);
+    c.options[t.option.id] = e.target.checked;
+    haptic();
+    update();
+  });
+  $('claims').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-role="remove"]');
+    if (!btn) return;
+    state.claims = state.claims.filter((x) => x.key !== Number(btn.dataset.key));
+    haptic();
+    renderClaims();
+    update();
+  });
+
+  function setPayer(p) {
+    state.payer = p;
+    $('payer-person').setAttribute('aria-pressed', String(p === 'person'));
+    $('payer-org').setAttribute('aria-pressed', String(p === 'org'));
+    haptic();
+    update();
+  }
+  $('payer-person').addEventListener('click', () => setPayer('person'));
+  $('payer-org').addEventListener('click', () => setPayer('org'));
+
+  $('benefit').innerHTML = D.BENEFITS.map((b) => `<option value="${b.id}">${esc(b.label)}</option>`).join('');
+  $('benefit').addEventListener('change', (e) => { state.benefit = e.target.value; update(); });
+  $('alreadyPaid').addEventListener('input', (e) => {
+    e.target.value = formatInput(e.target.value);
+    state.alreadyPaid = e.target.value;
+    update();
+  });
+
+  let lastText = '';
+
+  function update() {
+    const res = D.calculate({
+      payer: state.payer,
+      claims: state.claims.map((c) => ({ type: c.type, amount: parseAmount(c.amount), options: c.options })),
+      benefit: state.benefit,
+      alreadyPaid: parseAmount(state.alreadyPaid),
+    });
+    const out = $('result');
+    if (!res.lines.length) { out.innerHTML = ''; lastText = ''; return; }
+
+    const payerName = res.payer === 'org' ? 'организация' : 'физическое лицо';
+    const alimonyOnly = res.lines.every((l) => l.type === 'alimony');
+    let totalSub = `Суд первой инстанции · заявитель — ${payerName}`;
+    let totalVal = rub(res.first);
+    if (res.alreadyPaid > 0) {
+      totalSub = res.refund > 0 ? `Переплата с учётом уплаченных ${rub(res.alreadyPaid)}: вернуть можно по ст. 333.40 НК РФ` : `Нужно доплатить с учётом уже уплаченных ${rub(res.alreadyPaid)}. Всего пошлина: ${rub(res.first)}`;
+      totalVal = res.refund > 0 ? rub(res.refund) : rub(res.toPay);
+    }
+
+    const linesHtml = res.lines.map((l) => {
+      const struck = l.gross !== l.payable && l.type !== 'alimony' ? `<s>${rub(l.gross)}</s>` : '';
+      const extra = l.type === 'alimony' ? `Истец освобождён. С ответчика при удовлетворении иска: ${rub(l.fromDefendant)}` : `${esc(l.base)} · ${esc(l.ref)} НК РФ`;
+      return `<div class="line"><div class="t">${esc(l.label)}</div><div class="a">${struck}${rub(l.payable)}</div><div class="b">${extra}</div></div>`;
+    }).join('');
+
+    const pc = res.payer === 'person' ? ' col-active' : '';
+    const oc = res.payer === 'org' ? ' col-active' : '';
+    const firstRow = `<tr class="first"><td>Первая инстанция<span class="ref">районный суд, мировой судья, областной суд</span></td>
+      <td class="num${pc}">${res.payer === 'person' ? rub(res.first) : '—'}</td><td class="num${oc}">${res.payer === 'org' ? rub(res.first) : '—'}</td></tr>`;
+    const appealRows = res.appeals.map((a) => a.na
+      ? `<tr><td>${esc(a.label)}<span class="na">${esc(a.na)}</span></td><td class="num${pc}">—</td><td class="num${oc}">—</td></tr>`
+      : `<tr><td>${esc(a.label)}<span class="ref">${esc(a.ref)} НК РФ</span></td><td class="num${pc}">${rub(a.rates.person)}</td><td class="num${oc}">${rub(a.rates.org)}</td></tr>`).join('');
+
+    const warnings = res.warnings.map((w) => `<div class="callout">${esc(w)}</div>`).join('');
+    const benefitNote = res.benefitNote ? `<div class="callout ok">${esc(res.benefitNote)}</div>` : '';
+    const refund = res.settlement.length ? `<section class="card"><h2>Возврат при мировом соглашении, отказе от иска, признании иска</h2>
+        <div class="refund">${res.settlement.map((s) => `<div><span>${esc(s.stage)}</span><b>${rub(s.amount)}</b><i>${s.pct}% пошлины</i></div>`).join('')}</div>
+        <p class="note">Пп. 3 п. 1 ст. 333.40 НК РФ. Процент считается от пошлины, уплаченной истцом.</p></section>` : '';
+
+    out.innerHTML = `
+      <div class="total"><span class="k">${alimonyOnly ? 'Истцу платить' : res.alreadyPaid > 0 ? (res.refund > 0 ? 'К возврату' : 'К доплате') : 'К уплате'}</span><span class="v">${totalVal}</span><span class="s">${totalSub}</span></div>
+      ${warnings}${benefitNote}
+      <section class="card"><h2>Из чего складывается</h2><div class="lines">${linesHtml}</div></section>
+      <section class="card"><h2>По инстанциям</h2>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Инстанция</th><th class="num${pc}">Физлицо</th><th class="num${oc}">Организация</th></tr></thead>
+          <tbody>${firstRow}${appealRows}</tbody>
+        </table></div>
+        <p class="note">Пошлина за жалобу платится в твёрдой сумме и зависит только от того, кто её подаёт: физическое лицо или организация. Соучастники и третьи лица на стороне заявителя кассационной жалобы пошлину не платят (пп. 7 п. 1 ст. 333.20). Если заявитель освобождён от пошлины по ст. 333.36, по сложившейся практике льгота применяется и к его жалобам по этому делу.</p>
+      </section>
+      ${refund}
+      <div class="actions"><button class="btn" type="button" id="copy">Скопировать расчёт</button></div>`;
+
+    // Текст для копирования
+    const t = [];
+    t.push('Расчёт госпошлины (СОЮ, ст. 333.19 НК РФ)');
+    t.push(`Заявитель: ${payerName}`);
+    res.lines.forEach((l) => t.push(`• ${l.label}: ${l.type === 'alimony' ? 'истец освобождён' : D.fmt(l.payable) + ' ₽'} (${l.ref})`));
+    t.push(`Первая инстанция: ${D.fmt(res.first)} ₽`);
+    if (res.alreadyPaid > 0) t.push(res.refund > 0 ? `К возврату: ${D.fmt(res.refund)} ₽` : `К доплате: ${D.fmt(res.toPay)} ₽`);
+    res.appeals.forEach((a) => t.push(a.na ? `${a.label}: не предусмотрена` : `${a.label}: физлицо ${D.fmt(a.rates.person)} ₽, организация ${D.fmt(a.rates.org)} ₽`));
+    lastText = t.join('\n');
+    $('copy').addEventListener('click', copyText);
+  }
+
+  function copyText() {
+    const btn = $('copy');
+    const done = () => { btn.textContent = 'Скопировано'; setTimeout(() => { btn.textContent = 'Скопировать расчёт'; }, 1600); };
+    const fallback = () => {
+      const ta = document.createElement('textarea');
+      ta.value = lastText; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); done(); } catch (e) { btn.textContent = 'Не удалось скопировать'; }
+      ta.remove();
+    };
+    try { navigator.clipboard.writeText(lastText).then(done, fallback); } catch (e) { fallback(); }
+  }
+
+  fillAdd();
+  renderClaims();
+  update();
+})();
+</script>
+</body>
+</html>
